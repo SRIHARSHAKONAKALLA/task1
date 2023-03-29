@@ -1,0 +1,122 @@
+Task-1
+
+1. Set up a MongoDB database and connect to it using the Java driver.
+2. Create a model class for the server object with fields such as name, id, language, and framework.
+3. Create a repository interface to define the methods for interacting with the database, such as findAll, findById, save, and delete.
+4. Create a service class to implement the business logic for searching, creating, and deleting servers.
+5. Create a controller class to handle the HTTP requests and responses.
+6. Define the endpoints for the REST API.
+
+1. 
+php
+
+<dependency>
+    <groupId>org.mongodb</groupId>
+    <artifactId>mongo-java-driver</artifactId>
+    <version>3.12.8</version>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-mongodb</artifactId>
+</dependency>
+
+
+kotlin
+
+spring.data.mongodb.host=localhost
+spring.data.mongodb.port=27017
+spring.data.mongodb.database=serverdb
+
+
+2. Creating a model class
+typescript
+@Document(collection = "servers")
+public class Server {
+    @Id
+    private String id;
+    private String name;
+    private String language;
+    private String framework;
+    // getters and setters
+}
+
+3. Repository Interface (Arduino) 
+public interface ServerRepository extends MongoRepository<Server, String> {
+    List<Server> findByNameContainingIgnoreCase(String name);
+}
+
+4. Creating a Service class
+typescript
+@Service
+public class ServerService {
+    @Autowired
+    private ServerRepository serverRepository;
+
+    public List<Server> getAllServers() {
+        return serverRepository.findAll();
+    }
+
+    public Server getServerById(String id) {
+        return serverRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Server not found"));
+    }
+
+    public Server createServer(Server server) {
+        return serverRepository.save(server);
+    }
+
+    public void deleteServer(String id) {
+        if (serverRepository.existsById(id)) {
+            serverRepository.deleteById(id);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Server not found");
+        }
+    }
+
+    public List<Server> getServersByName(String name) {
+        List<Server> servers = serverRepository.findByNameContainingIgnoreCase(name);
+        if (servers.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Server not found");
+        }
+        return servers;
+    }
+}
+
+5. Controller class
+less
+@RestController
+@RequestMapping("/api/servers")
+public class ServerController {
+    @Autowired
+    private ServerService serverService;
+
+    @GetMapping("")
+    public List<Server> getAllServers() {
+        return serverService.getAllServers();
+    }
+
+    @GetMapping("/{id}")
+    public Server getServerById(@PathVariable String id) {
+        return serverService.getServerById(id);
+    }
+
+    @PostMapping("")
+    public Server createServer(@RequestBody Server server) {
+        return serverService.createServer(server);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteServer(@PathVariable String id) {
+        serverService.deleteServer(id);
+    }
+
+    @GetMapping("/search")
+    public List<Server> getServersByName(@RequestParam String name) {
+        return serverService.getServersByName(name);
+    }
+}
+
+6. The REST API has the following endpoints:
+
+GET /
